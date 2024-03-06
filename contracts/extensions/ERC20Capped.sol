@@ -10,6 +10,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  */
 abstract contract ERC20Capped is ERC20 {
     uint256 private immutable _cap;
+    uint256 public supplyReserve;
 
     /**
      * @dev Total supply cap has been exceeded.
@@ -39,6 +40,11 @@ abstract contract ERC20Capped is ERC20 {
         return _cap;
     }
 
+    function _reserveSupply(uint256 amount) internal {
+        require(amount <= cap() - totalSupply(), "invalid reserve amount");
+        supplyReserve = amount;
+    }
+
     /**
      * @dev See {ERC20-_update}.
      */
@@ -46,7 +52,7 @@ abstract contract ERC20Capped is ERC20 {
         super._update(from, to, value);
 
         if (from == address(0)) {
-            uint256 maxSupply = cap();
+            uint256 maxSupply = cap() - supplyReserve;
             uint256 supply = totalSupply();
             if (supply > maxSupply) {
                 revert ERC20ExceededCap(supply, maxSupply);
